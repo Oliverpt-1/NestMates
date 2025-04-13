@@ -32,7 +32,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2">
             <Home className="w-6 h-6 text-primary-600" />
-            <span className="font-semibold text-xl">InternHome</span>
+            <span className="font-semibold text-xl">NestMates</span>
           </Link>
           
           <div className="flex items-center space-x-4">
