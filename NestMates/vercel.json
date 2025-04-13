@@ -5,10 +5,12 @@
   "framework": "vite",
   "outputDirectory": "dist",
   "routes": [
+    { 
+      "handle": "filesystem"
+    },
     {
-      "src": "/[^.]+",
-      "dest": "/",
-      "status": 200
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 } 
