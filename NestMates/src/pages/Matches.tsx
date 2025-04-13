@@ -35,6 +35,8 @@ export default function Matches() {
     }
 
     async function loadData() {
+      if (!user) return;
+      
       try {
         // First get the current user's profile
         const { data: currentProfile, error: profileError } = await supabase
@@ -46,45 +48,69 @@ export default function Matches() {
         if (profileError) throw profileError;
         setUserProfile(currentProfile);
 
-        // Get potential matches based on multiple criteria
+        // Get potential matches based on MUST criteria first
         const { data: matchProfiles, error: matchError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('internship_location', currentProfile.internship_location)
           .neq('id', user.id)
-          // Simplified price range overlap check
-          .or(`price_range_min.lte.${currentProfile.price_range_max},price_range_max.gte.${currentProfile.price_range_min}`)
-          .or(`preferred_gender.eq.${currentProfile.gender},preferred_gender.eq.'No preference'`)
-          .order('internship_company', { ascending: true })
-          .limit(20);
+          .limit(100); // Get more profiles to filter client-side
 
         if (matchError) throw matchError;
         
-        // Filter matches to ensure price ranges truly overlap
+        // Filter matches based on MUST criteria and calculate compatibility scores
         const filteredMatches = (matchProfiles || []).filter(profile => {
-          const priceRangesOverlap = (
+          // Normalize location strings for comparison (remove case sensitivity and handle NYC/NY variations)
+          const normalizeLocation = (loc: string) => {
+            loc = loc.toLowerCase();
+            if (loc.includes('nyc') || loc.includes('new york')) return 'new york';
+            return loc;
+          };
+
+          const locationMatches = normalizeLocation(profile.internship_location) === 
+                                normalizeLocation(currentProfile.internship_location);
+
+          // MUST criteria: Location and Gender preferences
+          const genderPreferenceMatches = 
+            profile.preferred_gender?.toLowerCase() === currentProfile.gender?.toLowerCase() || 
+            profile.preferred_gender?.toLowerCase() === 'no preference' ||
+            profile.preferred_gender?.toLowerCase() === 'no-preference';
+
+          // Price range overlap check
+          const priceRangeOverlaps = 
             profile.price_range_min <= currentProfile.price_range_max &&
-            profile.price_range_max >= currentProfile.price_range_min
-          );
-          return priceRangesOverlap;
+            profile.price_range_max >= currentProfile.price_range_min;
+          
+          return locationMatches && genderPreferenceMatches && priceRangeOverlaps;
         });
 
-        // Sort matches by compatibility
+        // Sort matches by compatibility score
         const sortedMatches = filteredMatches.sort((a, b) => {
           let scoreA = 0;
           let scoreB = 0;
           
-          // Same industry/company bonus
-          if (a.internship_company === currentProfile.internship_company) scoreA += 3;
-          if (b.internship_company === currentProfile.internship_company) scoreB += 3;
+          // Price range compatibility (HIGHEST priority)
+          const priceRangeOverlapA = Math.min(
+            a.price_range_max - currentProfile.price_range_min,
+            currentProfile.price_range_max - a.price_range_min
+          );
+          const priceRangeOverlapB = Math.min(
+            b.price_range_max - currentProfile.price_range_min,
+            currentProfile.price_range_max - b.price_range_min
+          );
           
-          // Similar budget range bonus
-          const avgBudgetA = (a.price_range_min + a.price_range_max) / 2;
-          const avgBudgetB = (b.price_range_min + b.price_range_max) / 2;
-          const userAvgBudget = (currentProfile.price_range_min + currentProfile.price_range_max) / 2;
+          // Normalize price range scores (0-1) and give it highest weight
+          const maxPossibleOverlap = Math.max(
+            currentProfile.price_range_max - currentProfile.price_range_min,
+            a.price_range_max - a.price_range_min,
+            b.price_range_max - b.price_range_min
+          );
           
-          scoreA += 2 * (1 - Math.abs(avgBudgetA - userAvgBudget) / userAvgBudget);
-          scoreB += 2 * (1 - Math.abs(avgBudgetB - userAvgBudget) / userAvgBudget);
+          scoreA += (priceRangeOverlapA / maxPossibleOverlap) * 10; // Increased weight to 10
+          scoreB += (priceRangeOverlapB / maxPossibleOverlap) * 10;
+          
+          // Same industry/company bonus (LOW priority)
+          if (a.internship_company === currentProfile.internship_company) scoreA += 1;
+          if (b.internship_company === currentProfile.internship_company) scoreB += 1;
           
           return scoreB - scoreA;
         });

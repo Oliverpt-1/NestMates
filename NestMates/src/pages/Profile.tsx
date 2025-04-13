@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import Select from 'react-select';
+
+interface Option {
+  value: string;
+  label: string;
+}
 
 interface ProfileData {
   full_name: string;
@@ -15,7 +21,24 @@ interface ProfileData {
   price_range_min: number;
   price_range_max: number;
   additional_preferences: string;
+  gender: string;
+  preferred_gender: string;
 }
+
+const genderOptions = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'non-binary', label: 'Non-binary' },
+  { value: 'other', label: 'Other' },
+];
+
+const preferredGenderOptions = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'non-binary', label: 'Non-binary' },
+  { value: 'other', label: 'Other' },
+  { value: 'no-preference', label: 'No preference' },
+];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -34,6 +57,8 @@ export default function Profile() {
     price_range_min: 0,
     price_range_max: 0,
     additional_preferences: '',
+    gender: '',
+    preferred_gender: '',
   });
 
   useEffect(() => {
@@ -207,6 +232,32 @@ export default function Profile() {
               value={profile.additional_preferences}
               onChange={(e) => setProfile({ ...profile, additional_preferences: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+              Gender
+            </label>
+            <Select
+              id="gender"
+              options={genderOptions}
+              value={genderOptions.find(option => option.value === profile.gender)}
+              onChange={(option: Option | null) => setProfile({ ...profile, gender: option?.value || '' })}
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="preferred_gender" className="block text-sm font-medium text-gray-700">
+              Preferred Roommate Gender
+            </label>
+            <Select
+              id="preferred_gender"
+              options={preferredGenderOptions}
+              value={preferredGenderOptions.find(option => option.value === profile.preferred_gender)}
+              onChange={(option: Option | null) => setProfile({ ...profile, preferred_gender: option?.value || '' })}
+              className="mt-1"
             />
           </div>
 

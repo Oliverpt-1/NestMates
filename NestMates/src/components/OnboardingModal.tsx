@@ -42,7 +42,24 @@ interface FormData {
   bio: string;
   email: string;
   password: string;
+  gender: string;
+  preferred_gender: string;
 }
+
+const genderOptions = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'non-binary', label: 'Non-binary' },
+  { value: 'other', label: 'Other' },
+];
+
+const preferredGenderOptions = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'non-binary', label: 'Non-binary' },
+  { value: 'other', label: 'Other' },
+  { value: 'no-preference', label: 'No preference' },
+];
 
 export default function OnboardingModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
@@ -61,6 +78,8 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
     bio: '',
     email: '',
     password: '',
+    gender: '',
+    preferred_gender: '',
   });
 
   const steps = [
@@ -143,6 +162,8 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
           price_range_min: formData.rentMin,
           price_range_max: formData.rentMax,
           additional_preferences: formData.bio,
+          gender: formData.gender,
+          preferred_gender: formData.preferred_gender,
         });
 
         if (profileError) throw profileError;
@@ -164,7 +185,7 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
         toast.success('Welcome to InternHome!');
         navigate('/matches');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.message);
       setIsLoading(false);
     }
@@ -238,6 +259,32 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
                     required
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Gender
+                </label>
+                <Select
+                  options={genderOptions}
+                  onChange={(option) =>
+                    setFormData({ ...formData, gender: option?.value || '' })
+                  }
+                  className="w-full"
+                  placeholder="Select your gender"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Preferred Roommate Gender
+                </label>
+                <Select
+                  options={preferredGenderOptions}
+                  onChange={(option) =>
+                    setFormData({ ...formData, preferred_gender: option?.value || '' })
+                  }
+                  className="w-full"
+                  placeholder="Select preferred roommate gender"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

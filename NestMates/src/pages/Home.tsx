@@ -11,11 +11,17 @@ export default function Home() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
+    // Automatically navigate to matches if user is signed in
+    if (user) {
+      navigate('/matches');
+      return;
+    }
+    
     // Show onboarding modal if restart=true in URL
     if (searchParams.get('restart') === 'true') {
       setShowOnboarding(true);
     }
-  }, [searchParams]);
+  }, [user, navigate, searchParams]);
 
   const handleGetStarted = () => {
     if (user) {
@@ -24,6 +30,11 @@ export default function Home() {
       setShowOnboarding(true);
     }
   };
+
+  // If user is signed in, don't render the home page content
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-br from-primary-600 to-secondary-500">
